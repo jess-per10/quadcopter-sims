@@ -88,9 +88,41 @@ def euler_kinematics(phi, theta, omega):
 
     return np.array([phi_dot, theta_dot, psi_dot])
 
+# Quadcopter physical parameters
 
+ARM_LENGTH = 0.225 # m - distance from center to motor
+THRUST_COEFF = 2.98E-6 # kT - thrust coefficient (N/(rad/s)²)
+DRAG_COEFF = 1.14E-7 # kD - drag coefficient (N*m/(rad/s)²)
 
+def motor_mixing(motor_speeds):
+    """
+    Convert individual motor speeds to total thrust and torques.
+    motor_speeds = [w1, w2, w3, w4] in rad/s
+    Motors: 1 = front-right (CCW), 2 = back-left (CCW), 
+            3 = front-left (CW), 4 = back-right (CW)
 
+    Returns:
+        thrust     - total upward force (N)
+        tau_phi    - roll torque (N.m)
+        tau_theta  - pitch torque (N.m)
+        tau_psi    - yaw torque (N.m)
+    """
 
+    w1, w2, w3, w4 = motor_speeds
 
-    # Angualar accelerations - Newton-Euler Equations
+    # Square the speeds - thrust proportional to omega squared
+    w1_sq, w2_sq, w3_sq, w4_sq = w1**2, w2**2, w3**2, w4**2
+
+    #Total  thrust is sum of all motors' thrust
+    thrust = THRUST_COEFF * (w1_sq + w2_sq + w3_sq + w4_sq)
+
+    # Roll torque: (front-right + back-left) - (front-left + back-right) (roll right is positive)
+    tau_phi = THRUST_COEFF * ARM_LENGTH * (w2_sq + w3_sq - w1_sq - w4_sq)
+
+    # Pitch torque - front motors vs back motors (pitch up is positive))
+    tau_theta = THRUST_COEFF * ARM_LENGTH * (w1_sq + w3_sq - w2_sq - w4_sq)
+
+    # Yaw torque - CW motors vs CCW motors (uses drag coeff not thrust) (CW yaw is positive)
+    tau_psi = DRAG_COEFF * (w1_sq + w2_sq - w3_sq - w4_sq)
+
+    return thrust, tau_phi, tau_theta, tau_psi

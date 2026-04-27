@@ -52,3 +52,43 @@ def test_euler_kinematics_level():
     # At zero attitude, p=phi_dot, q=theta_dot, r=psi_dot exactly
     np.testing.assert_allclose(rates, omega, atol=1e-6)
 
+from quadcopter_sim.dynamics import motor_mixing, ARM_LENGTH, THRUST_COEFF, DRAG_COEFF
+
+def test_symmetric_hover():
+    """
+    Equal motor speeds should produced zero roll, ptch, yaw torques. 
+    Only thrust should be non-zero. 
+    """
+    w = 100.0 #rad/s - same for all motors
+    thrust, tau_phi, tau_theta, tau_psi = motor_mixing([w,w,w,w])
+
+    #Thrust should be 4*kT*w²
+    expected_thrust = 4 * THRUST_COEFF * w**2
+    np.testing.assert_allclose(thrust, expected_thrust, atol=1e-6)
+
+    #All torques should be zero - symmetric hover
+    np.testing.assert_allclose(tau_phi,   0, atol=1e-6)
+    np.testing.assert_allclose(tau_theta, 0, atol=1e-6)
+    np.testing.assert_allclose(tau_psi,   0, atol=1e-6)
+
+def test_roll_torque_direction():
+    """
+    Speeding up teh left mtoros (3 and 2) should produce a positive roll torque
+    """
+    w_base = 100.0
+    w_high = 110.0 # left motors faster 
+
+    _, tau_phi, _, _ = motor_mixing([w_base, w_high, w_high, w_base])    
+
+    # Left motors faster = positive roll torque
+    assert tau_phi > 0
+
+def test_zero_motors():
+    """
+    All motors off means zero thrust and zero torques.
+    """
+    thrust, tau_phi, tau_theta, tau_psi = motor_mixing([0, 0, 0, 0])
+    np.testing.assert_allclose(thrust,    0, atol=1e-10)
+    np.testing.assert_allclose(tau_phi,   0, atol=1e-10)
+    np.testing.assert_allclose(tau_theta, 0, atol=1e-10)
+    np.testing.assert_allclose(tau_psi,   0, atol=1e-10)
