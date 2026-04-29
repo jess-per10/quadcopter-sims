@@ -92,3 +92,29 @@ def test_zero_motors():
     np.testing.assert_allclose(tau_phi,   0, atol=1e-10)
     np.testing.assert_allclose(tau_theta, 0, atol=1e-10)
     np.testing.assert_allclose(tau_psi,   0, atol=1e-10)
+
+from quadcopter_sim.simulation import run_simulation, state_derivative
+from quadcopter_sim.dynamics import MASS, GRAVITY, THRUST_COEFF
+
+def test_state_derivative_length():
+    """
+    State derivative must return 12 values
+    """
+
+    state = np.zeros(12)
+    motor_speeds = [100,100,100,100]
+    deriv = state_derivative(0,state,motor_speeds)
+    assert len(deriv) == 12
+
+def test_free_fall():
+    """
+    With zero motor speeds, quadcopter should fall under gravity. 
+    After 1 second, z velocity should be approximately -9.81m/s.
+    """
+    
+    initial_state = np.zeros(12) # start at rest at origin
+    result = run_simulation(initial_state, [0,0,0,0], t_end = 1.0)
+    
+    #Final z velocity should be close to -g
+    final_vz = result.y[8,-1]
+    np.testing.assert_allclose(final_vz, -GRAVITY, rtol=0.1, atol=0.1)
