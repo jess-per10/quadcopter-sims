@@ -18,8 +18,8 @@ def make_attitude_controllers():
     These gains ae starting points and may need tuning for good performance - expect to tune.
     """
     return {
-        'roll':  PIDController(kp=4.0, ki=0.0, kd=0.5, output_limit=0.5),
-        'pitch': PIDController(kp=4.0, ki=0.0, kd=0.5, output_limit=0.5),
+        'roll':  PIDController(kp=8.5, ki=0.0, kd=6.5, output_limit=0.5),
+        'pitch': PIDController(kp=2.0, ki=0.0, kd=2.0, output_limit=0.5),
         'yaw':   PIDController(kp=2.0, ki=0.0, kd=0.3, output_limit=0.3),    
     }
 
@@ -51,10 +51,10 @@ def attitude_control_step(state, setpoints, controllers, dt):
     
     # Convert PID outputs to motor speed adjustments
     # Each command adjusts motors differentially around hover speed
-    w1 = HOVER_W - roll_cmd - pitch_cmd + yaw_cmd # front right (CCW)
-    w2 = HOVER_W - roll_cmd + pitch_cmd + yaw_cmd # back left (CCW)
-    w3 = HOVER_W + roll_cmd - pitch_cmd - yaw_cmd # front left (CW)
-    w4 = HOVER_W + roll_cmd + pitch_cmd - yaw_cmd # back right (CW)
+    w1 = HOVER_W - roll_cmd + pitch_cmd + yaw_cmd # front right (CCW)
+    w2 = HOVER_W + roll_cmd - pitch_cmd + yaw_cmd # back left (CCW)
+    w3 = HOVER_W + roll_cmd + pitch_cmd - yaw_cmd # front left (CW)
+    w4 = HOVER_W - roll_cmd - pitch_cmd - yaw_cmd # back right (CW)
 
     # Clamp motor speeds to physical limits
     motor_speeds = np.clip([w1, w2, w3, w4], 0, HOVER_W * 2)
